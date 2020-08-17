@@ -1,0 +1,48 @@
+---
+ - name: Install zabbix centOS 7 Repo
+   yum:
+     name: "{{ centos7_link }}"
+   when: ansible_os_family == "RedHat"
+   
+ - name: Installing Zabbix Agent 5.x
+   yum: name=zabbix-agent  state=latest
+   when: ansible_os_family == "RedHat"
+  
+ - name: Create agent server
+   lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: ^Server=.*
+     insertafter: ^# Server=
+     line: Server={{ zabbix_servername }}
+
+ - name: Create agent server Active
+   lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: ^ServerActive=.*
+     insertafter: ^# ServerActive=
+     line: ServerActive={{ zabbix_servername }}
+
+ - name: Replace hostname
+   lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: ^Hostname=.*
+     insertafter: ^# Hostname=
+     line: Hostname={{ ansible_nodename }}
+
+ - name: Metadate For Linux
+   lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: ^# HostMetadataItem=.*
+     insertafter: ^# Default
+     line: HostMetadataItem={{ metadata }}
+
+ - name: Copying the systemctl.xml file Server to Node
+   copy:
+     src: centos7/systemctl.conf
+     dest: /etc/zabbix/zabbix_agentd.d
+
+ - name: Start the service Zabbix-Agent
+   service: name=zabbix-agent state=started
+
+ - name: Enable Zabbix-Agent
+   service: name=zabbix-agent enabled=yes

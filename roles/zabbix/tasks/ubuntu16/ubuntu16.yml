@@ -1,0 +1,73 @@
+---
+ - name: download zabbix deb file for Ubuntu 18.04 bionic
+   get_url:
+     url: "{{ ubuntu16_xlink }}"
+     dest: "/tmp/{{ ubuntu16_xfile }}"
+   when: ansible_distribution_release == 'bionic'
+
+ - name: install zabbix deb for Ubuntu 18.04 bionic
+   apt: deb="/tmp/{{ ubuntu16_xfile }}"
+   when: ansible_distribution_release == 'bionic'
+   
+ - name: download zabbix deb file for Debion stretch
+   get_url:
+     url: "{{ ubuntu16_slink }}"
+     dest: "/tmp/{{ ubuntu16_sfile }}"
+   when: ansible_distribution_release == 'stretch'
+
+ - name: install zabbix deb for Debion stretch
+   apt: deb="/tmp/{{ ubuntu16_sfile }}"
+   when: ansible_distribution_release == 'stretch'     
+   
+ - name: install zabbix-agent 5.0 Ubuntu 18.04
+   apt:
+     name: zabbix-agent
+     state: latest
+     update_cache: yes
+   when: ansible_distribution_release == 'bionic'
+   
+ - name: install zabbix-agent 5.0 Debion stretch
+   apt:
+     name: zabbix-agent
+     state: latest
+     update_cache: yes
+   when: ansible_distribution_release == 'stretch'   
+   
+ - name: Create agent server
+   lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: ^Server=.*
+     insertafter: ^# Server=
+     line: Server={{ zabbix_servername }}
+
+ - name: Create agent server Active
+   lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: ^ServerActive=.*
+     insertafter: ^# ServerActive=
+     line: ServerActive={{ zabbix_servername }}
+
+ - name: Replace hostname
+   lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: ^Hostname=.*
+     insertafter: ^# Hostname=
+     line: Hostname={{ ansible_nodename }}
+
+ - name: Metadate For Linux
+   lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: ^# HostMetadataItem=.*
+     insertafter: ^# Default
+     line: HostMetadataItem={{ metadata }}
+ 
+ - name: Copying the systemctl.xml file Server to Node
+   copy:
+     src: ubuntu16/systemctl.conf
+     dest: /etc/zabbix/zabbix_agentd.d
+
+ - name: Start the service Zabbix-Agent
+   service: name=zabbix-agent state=started
+
+ - name: Enable Zabbix-Agent
+   service: name=zabbix-agent enabled=yes
